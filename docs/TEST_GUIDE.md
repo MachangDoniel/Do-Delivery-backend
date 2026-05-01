@@ -194,3 +194,86 @@ Further improvements should focus on:
 * Rider dispatch system
 * Real-time tracking
 * Location-based assignment
+
+---
+
+# 📦 Get Order by ID
+
+## Request
+
+```bash
+curl -X GET http://localhost:8080/api/orders/<ORDER_ID> \
+-H "Authorization: Bearer <ACCESS_TOKEN>"
+```
+
+## Example Request
+
+```bash
+curl -X GET http://localhost:8080/api/orders/6cccc9f5-2ffb-4b0c-a2d2-19a7e73b8fde \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9..."
+```
+
+## ✅ Sample Response
+
+```json
+{
+    "status": 200,
+    "data": {
+        "id": "6cccc9f5-2ffb-4b0c-a2d2-19a7e73b8fde",
+        "customerId": "a944ebea-30a3-4906-86ed-c7c7c917040d",
+        "customerName": "Doniel",
+        "riderId": null,
+        "riderName": null,
+        "pickupLat": 23.9999,
+        "pickupLng": 90.4203,
+        "dropLat": 23.8103,
+        "dropLng": 90.4125,
+        "type": "PARCEL",
+        "status": "CREATED",
+        "price": 18.32,
+        "note": "Pickup from Kaliganj, drop at Dhaka",
+        "createdAt": "2026-05-01T17:21:00.484035Z",
+        "updatedAt": "2026-05-01T17:21:00.484071Z"
+    },
+    "timestamp": "2026-05-01T17:32:22.537733Z"
+}
+```
+
+---
+
+# 📦 Get My Orders
+
+## Request
+
+```bash
+curl -X GET http://localhost:8080/api/orders \
+-H "Authorization: Bearer <ACCESS_TOKEN>"
+```
+
+## Example Response
+
+```json
+{
+    "status": 200,
+    "data": [
+        {
+            "id": "6cccc9f5-2ffb-4b0c-a2d2-19a7e73b8fde",
+            "customerId": "a944ebea-30a3-4906-86ed-c7c7c917040d",
+            "customerName": "Doniel",
+            "riderId": null,
+            "riderName": null,
+            "pickupLat": 23.9999,
+            "pickupLng": 90.4203,
+            "dropLat": 23.8103,
+            "dropLng": 90.4125,
+            "type": "PARCEL",
+            "status": "CREATED",
+            "price": 18.32,
+            "note": "Pickup from Kaliganj, drop at Dhaka",
+            "createdAt": "2026-05-01T17:21:00.484035Z",
+            "updatedAt": "2026-05-01T17:21:00.484071Z"
+        }
+    ],
+    "timestamp": "2026-05-01T17:30:42.523797Z"
+}
+```
