@@ -3,10 +3,14 @@ package com.dodelivery.app.exception;
 import com.dodelivery.app.dto.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
+import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.data.redis.RedisSystemException;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -74,6 +78,23 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining("; "));
 
         return buildError(HttpStatus.BAD_REQUEST, "Validation Failed", message, req);
+    }
+
+    // ── Infrastructure exceptions ───────────────────────────────────────────
+
+    @ExceptionHandler({
+            RedisConnectionFailureException.class,
+            RedisSystemException.class,
+            DataAccessResourceFailureException.class,
+            CannotGetJdbcConnectionException.class
+    })
+    public ResponseEntity<ApiResponse<Void>> handleInfrastructure(
+            Exception ex, HttpServletRequest req) {
+        log.error("Infrastructure dependency failure on {} {}", req.getMethod(), req.getRequestURI(), ex);
+        return buildError(HttpStatus.SERVICE_UNAVAILABLE,
+                "Service Unavailable",
+                "Temporary service unavailable. Please try again.",
+                req);
     }
 
     // ── Catch-all ─────────────────────────────────────────────────────────────
