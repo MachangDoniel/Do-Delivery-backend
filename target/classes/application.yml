@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: do-delivery-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/do_delivery
+    username: donieltripura
+    password: ""
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate      # Flyway owns the schema — never let Hibernate alter it
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_batch_fetch_size: 20
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+
+server:
+  port: 8080
+
+# ─── App-specific config ───────────────────────────────────────────────────────
+app:
+  jwt:
+    # Must be at least 32 characters. Externalize via env var in production.
+    secret: do-delivery-super-secret-jwt-key-min-32-chars!
+    access-token-expiry-ms: 900000       # 15 minutes
+    refresh-token-expiry-ms: 604800000   # 7 days
+
+  otp:
+    ttl-seconds: 300          # OTP valid for 5 minutes
+    mock-enabled: true        # Return OTP in response (dev/test only — disable in prod)
+
+  pricing:
+    base-fare: 2.50           # USD
+    per-km-rate: 0.75         # USD per km
+
+  redis:
+    refresh-token-ttl-days: 7
+    rider-location-ttl-seconds: 300   # Location expires after 5 min of no updates

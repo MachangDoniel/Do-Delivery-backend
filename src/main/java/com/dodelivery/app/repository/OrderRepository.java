@@ -1,0 +1,49 @@
+package com.dodelivery.app.repository;
+
+import com.dodelivery.app.entity.Order;
+import com.dodelivery.app.enums.OrderStatus;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+public interface OrderRepository extends JpaRepository<Order, UUID> {
+
+    /**
+     * Fetch a single order with customer and rider eagerly loaded
+     * to avoid N+1 when building OrderResponse.
+     */
+    @Query("SELECT o FROM Order o " +
+           "JOIN FETCH o.customer " +
+           "LEFT JOIN FETCH o.rider " +
+           "WHERE o.id = :id")
+    Optional<Order> findByIdWithDetails(@Param("id") UUID id);
+
+    /**
+     * All orders for a specific customer, newest first.
+     */
+    @Query("SELECT o FROM Order o " +
+           "JOIN FETCH o.customer " +
+           "LEFT JOIN FETCH o.rider " +
+           "WHERE o.customer.id = :customerId " +
+           "ORDER BY o.createdAt DESC")
+    List<Order> findAllByCustomerIdWithDetails(@Param("customerId") UUID customerId);
+
+    /**
+     * All orders currently assigned to a rider.
+     */
+    @Query("SELECT o FROM Order o " +
+           "JOIN FETCH o.customer " +
+           "JOIN FETCH o.rider " +
+           "WHERE o.rider.id = :riderId " +
+           "ORDER BY o.createdAt DESC")
+    List<Order> findAllByRiderIdWithDetails(@Param("riderId") UUID riderId);
+
+    /**
+     * Orders in a specific status — used to broadcast new CREATED orders to online riders.
+     */
+    List<Order> findAllByStatus(OrderStatus status);
+}
