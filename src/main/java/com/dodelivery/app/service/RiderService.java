@@ -10,6 +10,9 @@ public interface RiderService {
     /** Assign nearest available rider to the order (status: CREATED → ASSIGNED). */
     OrderResponse assignNearestRider(UUID orderId, UUID customerId);
 
+    /** Attempt to auto-assign nearest available rider to an order (returns null if no rider found). */
+    OrderResponse tryAutoAssignRider(UUID orderId);
+
     /** Mark rider as online. */
     void goOnline(UUID riderId);
 

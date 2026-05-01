@@ -76,6 +76,46 @@ public class RiderServiceImpl implements RiderService {
 
     @Override
     @Transactional
+    public OrderResponse tryAutoAssignRider(UUID orderId) {
+        Order order = findOrderForRider(orderId);
+
+        // Only auto-assign orders in CREATED state
+        if (order.getStatus() != OrderStatus.CREATED) {
+            return null;
+        }
+
+        List<RiderProfile> onlineRiders = riderProfileRepository.findOnlineWithKnownLocation();
+        if (onlineRiders.isEmpty()) {
+            // No online riders available — keep order in CREATED state for retry later
+            return null;
+        }
+
+        RiderProfile nearest = onlineRiders.stream()
+                .min(Comparator.comparingDouble(rp -> haversineKm(
+                        order.getPickupLat(),
+                        order.getPickupLng(),
+                        rp.getCurrentLat(),
+                        rp.getCurrentLng())))
+                .orElse(null);
+
+        if (nearest == null) {
+            return null;
+        }
+
+        order.setRider(nearest.getUser());
+        order.setStatus(OrderStatus.ASSIGNED);
+        order.setAssignedAt(Instant.now());
+        order.setPickedUpAt(null);
+        order.setDeliveredAt(null);
+
+        Order saved = orderRepository.save(order);
+        OrderResponse response = orderServiceImpl.toResponse(saved);
+        eventPublisher.publishOrderStatusUpdate(orderId, response);
+        return response;
+    }
+
+    @Override
+    @Transactional
     public void goOnline(UUID riderId) {
         var profile = riderProfileRepository.findByUserIdWithUser(riderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Rider profile not found"));
