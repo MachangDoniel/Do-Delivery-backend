@@ -101,7 +101,7 @@ Old refresh token is invalidated immediately.
 
 # 2. ORDER FLOW
 
-## 2.1 Create Order (CUSTOMER)
+## 2.1 Create Order (CUSTOMER) — with AUTO-DISPATCH
 
 ```bash
 curl -s -X POST http://localhost:8080/api/orders \
@@ -117,7 +117,11 @@ curl -s -X POST http://localhost:8080/api/orders \
 }'
 ```
 
-Expected: `201` — `status: CREATED`, price calculated automatically.
+Expected: `201` — **Auto-dispatch enabled**:
+- If online riders with GPS location exist → `status: ASSIGNED` (nearest rider selected instantly)
+- If no riders available → `status: CREATED` (stays pending, can assign manually later via `/assign`)
+
+Price calculated automatically in both cases.
 
 ```json
 {
@@ -211,16 +215,22 @@ Expected: `200`
 
 ---
 
-## 3.3 Assign nearest rider (CUSTOMER)
+## 3.3 Assign nearest rider (CUSTOMER) — Manual or Retry
+
+**Note:** Assignment now happens **automatically** at order creation if online riders exist.
+This endpoint is for **retry dispatch** after rejection or if order stays in `CREATED` state.
 
 ```bash
 curl -s -X POST http://localhost:8080/api/orders/<ORDER_ID>/assign \
 -H "Authorization: Bearer <CUSTOMER_TOKEN>"
 ```
 
+Only works if order status is `CREATED` (not already assigned).  
 Expected: `200` — `status: ASSIGNED`, `riderId` and `assignedAt` populated.
 
-Fails with `400` if no online riders have a known location.
+Fails with `400` if:
+- Order is not in `CREATED` state
+- No online riders have a known location
 
 ---
 

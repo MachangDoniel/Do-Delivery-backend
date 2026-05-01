@@ -45,10 +45,10 @@ On error `data` is null; `error` and `message` are populated.
 ---
 
 ### `OrderStatus`
-| Value | Description | Who triggers |
-|-------|-------------|--------------|
-| `CREATED` | Order placed, waiting for dispatch | System (on order creation) |
-| `ASSIGNED` | Nearest rider selected by system | Customer via `/assign` |
+| Value | Description | Triggered by |
+|-------|-------------|--------------|  
+| `CREATED` | Order placed, awaiting dispatch (auto-dispatch failed or no riders online) | System (on order creation if no available riders) |
+| `ASSIGNED` | Nearest rider auto-selected at creation OR manually assigned | System (auto-dispatch at order creation) OR Customer via `/assign` (manual retry) |
 | `ACCEPTED` | Assigned rider confirmed | Rider via `/accept` |
 | `PICKED_UP` | Rider collected the item | Rider via `/pickup` |
 | `DELIVERED` | Item delivered to recipient | Rider via `/deliver` |
@@ -243,7 +243,11 @@ Place a new delivery order.
 | `type` | `OrderType` | `DOCUMENT`, `SMALL`, or `PARCEL`, required |
 | `note` | string | max 500 chars, optional |
 
-**Response `201`:** `OrderResponse` (see schema below)
+**Response `201`:** `OrderResponse` with:
+- `status: ASSIGNED` (if online riders with GPS location exist) — nearest rider auto-selected
+- `status: CREATED` (if no online riders available) — stays pending for manual assignment
+
+(See schema below)
 
 ---
 
@@ -285,7 +289,10 @@ Cancel an order. Only allowed when status is `CREATED`.
 
 ## POST /api/orders/{id}/assign
 
-Find and assign the nearest online rider to this order.
+**Manual dispatch or retry assignment.** Auto-dispatch happens automatically at order creation, so this endpoint is for:
+- Retrying after a rider rejects
+- Assigning orders that were created before any riders came online
+- Force re-assignment to a different rider
 
 **Auth:** `CUSTOMER` role required (must own the order)
 
@@ -297,7 +304,7 @@ Find and assign the nearest online rider to this order.
 **Response `200`:** `OrderResponse` with `status: ASSIGNED`, `riderId`, `riderName`, `assignedAt`
 
 **Errors:**
-- `400` — Order is not in `CREATED` state
+- `400` — Order is not in `CREATED` state (cannot reassign already-assigned orders)
 - `400` — No online riders available
 - `400` — Order does not belong to you
 
