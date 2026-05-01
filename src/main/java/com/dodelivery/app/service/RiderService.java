@@ -7,6 +7,9 @@ import java.util.UUID;
 
 public interface RiderService {
 
+    /** Assign nearest available rider to the order (status: CREATED → ASSIGNED). */
+    OrderResponse assignNearestRider(UUID orderId, UUID customerId);
+
     /** Mark rider as online. */
     void goOnline(UUID riderId);
 
@@ -16,12 +19,15 @@ public interface RiderService {
     /** Store rider's current GPS coordinates in Redis and broadcast via WebSocket. */
     void updateLocation(UUID riderId, UpdateLocationRequest request);
 
-    /** Accept an order (status: CREATED → ACCEPTED). */
+    /** Accept an order (status: ASSIGNED → ACCEPTED). */
     OrderResponse acceptOrder(UUID orderId, UUID riderId);
 
-    /** Mark item as picked up (status: ACCEPTED → PICKED). */
+    /** Reject an assigned order (status: ASSIGNED → CREATED and unassign rider). */
+    OrderResponse rejectOrder(UUID orderId, UUID riderId);
+
+    /** Mark item as picked up (status: ACCEPTED → PICKED_UP). */
     OrderResponse markPickedUp(UUID orderId, UUID riderId);
 
-    /** Mark order as delivered (status: PICKED → DELIVERED). */
+    /** Mark order as delivered (status: PICKED_UP → DELIVERED). */
     OrderResponse markDelivered(UUID orderId, UUID riderId);
 }

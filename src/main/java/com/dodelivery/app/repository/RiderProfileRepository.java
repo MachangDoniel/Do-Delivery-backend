@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,6 +17,10 @@ public interface RiderProfileRepository extends JpaRepository<RiderProfile, UUID
      */
     @Query("SELECT rp FROM RiderProfile rp JOIN FETCH rp.user WHERE rp.user.id = :userId")
     Optional<RiderProfile> findByUserIdWithUser(@Param("userId") UUID userId);
+
+    @Query("SELECT rp FROM RiderProfile rp JOIN FETCH rp.user " +
+           "WHERE rp.online = true AND rp.currentLat IS NOT NULL AND rp.currentLng IS NOT NULL")
+    List<RiderProfile> findOnlineWithKnownLocation();
 
     boolean existsByUserId(UUID userId);
 }

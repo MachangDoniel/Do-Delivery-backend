@@ -120,6 +120,9 @@ public class OrderServiceImpl implements OrderService {
                 order.getStatus(),
                 order.getPrice(),
                 order.getNote(),
+                order.getAssignedAt(),
+                order.getPickedUpAt(),
+                order.getDeliveredAt(),
                 order.getCreatedAt(),
                 order.getUpdatedAt()
         );
