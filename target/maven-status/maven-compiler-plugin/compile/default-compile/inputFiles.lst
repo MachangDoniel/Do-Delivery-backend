@@ -44,6 +44,7 @@
 /Users/donieltripura/IdeaProjects/Do Delivery/backend/src/main/java/com/dodelivery/app/dto/request/CreateOrderRequest.java
 /Users/donieltripura/IdeaProjects/Do Delivery/backend/src/main/java/com/dodelivery/app/dto/request/RegisterRequest.java
 /Users/donieltripura/IdeaProjects/Do Delivery/backend/src/main/java/com/dodelivery/app/security/JwtTokenProvider.java
+/Users/donieltripura/IdeaProjects/Do Delivery/backend/src/main/java/com/dodelivery/app/dto/response/MeResponse.java
 /Users/donieltripura/IdeaProjects/Do Delivery/backend/src/main/java/com/dodelivery/app/dto/request/UpdateLocationRequest.java
 /Users/donieltripura/IdeaProjects/Do Delivery/backend/src/main/java/com/dodelivery/app/entity/RiderProfile.java
 /Users/donieltripura/IdeaProjects/Do Delivery/backend/src/main/java/com/dodelivery/app/controller/RiderController.java

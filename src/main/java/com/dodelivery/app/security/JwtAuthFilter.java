@@ -2,6 +2,7 @@ package com.dodelivery.app.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         "/api/auth/register",
         "/api/auth/send-otp",
         "/api/auth/login",
-        "/api/auth/refresh"
+        "/api/auth/refresh",
+        "/api/auth/logout"
     );
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
@@ -55,6 +57,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = extractBearerToken(request);
 
+        // Fall back to HttpOnly cookie when no Authorization header is present
+        if (token == null) {
+            token = extractCookieToken(request);
+        }
+
         if (token != null && tokenProvider.validateToken(token)) {
             String phone = tokenProvider.getPhoneFromToken(token);
             UserDetails userDetails = userDetailsService.loadUserByUsername(phone);
@@ -74,6 +81,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
             return header.substring(7);
+        }
+        return null;
+    }
+
+    private String extractCookieToken(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) return null;
+        for (Cookie cookie : cookies) {
+            if ("access_token".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
         }
         return null;
     }

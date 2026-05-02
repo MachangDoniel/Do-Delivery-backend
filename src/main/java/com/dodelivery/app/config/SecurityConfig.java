@@ -51,8 +51,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Preflight requests
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Public auth endpoints
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // Public auth endpoints (explicit list — /api/auth/me is protected)
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/send-otp",
+                                "/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
                         // WebSocket handshake
                         .requestMatchers("/ws/**").permitAll()
                         // Actuator health (ops monitoring)
@@ -85,7 +86,7 @@ public class SecurityConfig {
                 config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
                 config.setAllowedHeaders(List.of("*"));
                 config.setExposedHeaders(List.of("Location"));
-                config.setAllowCredentials(false);
+                config.setAllowCredentials(true);
                 config.setMaxAge(3600L);
 
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

@@ -20,4 +20,7 @@ public interface AuthService {
 
     /** Rotate a refresh token and return a new token pair. */
     AuthResponse refresh(RefreshTokenRequest request);
+
+    /** Revoke a refresh token, preventing further use (e.g., on logout). */
+    void revokeRefreshToken(String refreshToken);
 }

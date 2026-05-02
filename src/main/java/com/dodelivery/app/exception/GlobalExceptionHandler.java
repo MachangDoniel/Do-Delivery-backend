@@ -4,6 +4,7 @@ import com.dodelivery.app.dto.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -103,7 +104,7 @@ public class GlobalExceptionHandler {
             HttpRequestMethodNotSupportedException ex, HttpServletRequest req) {
         String supported = ex.getSupportedHttpMethods() == null
                 ? ""
-                : ex.getSupportedHttpMethods().stream().map(Enum::name).sorted().collect(Collectors.joining(", "));
+                : ex.getSupportedHttpMethods().stream().map(HttpMethod::name).sorted().collect(Collectors.joining(", "));
 
         String message = supported.isEmpty()
                 ? "HTTP method not allowed for this endpoint"

@@ -38,7 +38,6 @@ com/dodelivery/app/service/PricingService.class
 com/dodelivery/app/service/impl/AuthServiceImpl.class
 com/dodelivery/app/exception/ResourceNotFoundException.class
 com/dodelivery/app/enums/Role.class
-com/dodelivery/app/exception/GlobalExceptionHandler.class
 com/dodelivery/app/entity/User$UserBuilder.class
 com/dodelivery/app/dto/response/OrderResponse.class
 com/dodelivery/app/service/OrderService.class
