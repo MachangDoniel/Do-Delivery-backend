@@ -36,6 +36,15 @@ public class RiderServiceImpl implements RiderService {
     // ── Online / Offline ─────────────────────────────────────────────────────
 
     @Override
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getMyOrders(UUID riderId) {
+        return orderRepository.findAllByRiderIdWithDetails(riderId)
+                .stream()
+                .map(orderServiceImpl::toResponse)
+                .toList();
+    }
+
+    @Override
     @Transactional
     public OrderResponse assignNearestRider(UUID orderId, UUID customerId) {
         Order order = findOrderForRider(orderId);

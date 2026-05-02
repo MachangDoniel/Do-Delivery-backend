@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -26,6 +27,18 @@ import java.util.UUID;
 public class RiderController {
 
     private final RiderService riderService;
+
+    /**
+     * List orders assigned to the authenticated rider.
+     * GET /api/riders/orders
+     */
+    @GetMapping("/orders")
+    public ResponseEntity<ApiResponse<List<OrderResponse>>> getMyOrders(
+            @AuthenticationPrincipal AppUserDetails principal) {
+
+        List<OrderResponse> orders = riderService.getMyOrders(principal.getUserId());
+        return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK.value(), orders));
+    }
 
     /**
      * Quick online toggle endpoint.

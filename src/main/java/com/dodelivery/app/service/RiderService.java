@@ -3,9 +3,13 @@ package com.dodelivery.app.service;
 import com.dodelivery.app.dto.request.UpdateLocationRequest;
 import com.dodelivery.app.dto.response.OrderResponse;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface RiderService {
+
+    /** List all orders assigned to the authenticated rider. */
+    List<OrderResponse> getMyOrders(UUID riderId);
 
     /** Assign nearest available rider to the order (status: CREATED → ASSIGNED). */
     OrderResponse assignNearestRider(UUID orderId, UUID customerId);
