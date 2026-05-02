@@ -39,7 +39,13 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
            "JOIN FETCH o.customer " +
            "JOIN FETCH o.rider " +
            "WHERE o.rider.id = :riderId " +
-           "ORDER BY o.createdAt DESC")
+           "ORDER BY CASE " +
+           "WHEN o.status = com.dodelivery.app.enums.OrderStatus.ASSIGNED THEN 0 " +
+           "WHEN o.status = com.dodelivery.app.enums.OrderStatus.ACCEPTED THEN 1 " +
+           "WHEN o.status = com.dodelivery.app.enums.OrderStatus.PICKED_UP THEN 2 " +
+           "WHEN o.status = com.dodelivery.app.enums.OrderStatus.DELIVERED THEN 3 " +
+           "ELSE 4 END, " +
+           "COALESCE(o.assignedAt, o.updatedAt, o.createdAt) DESC")
     List<Order> findAllByRiderIdWithDetails(@Param("riderId") UUID riderId);
 
     /**
