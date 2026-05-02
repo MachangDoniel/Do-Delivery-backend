@@ -43,7 +43,13 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     List<Order> findAllByRiderIdWithDetails(@Param("riderId") UUID riderId);
 
     /**
-     * Orders in a specific status — used to broadcast new CREATED orders to online riders.
+     * All orders in the system with customer and rider details.
      */
+    @Query("SELECT o FROM Order o " +
+           "JOIN FETCH o.customer " +
+           "LEFT JOIN FETCH o.rider " +
+           "ORDER BY o.createdAt DESC")
+    List<Order> findAllWithDetails();
+
     List<Order> findAllByStatus(OrderStatus status);
 }

@@ -23,4 +23,6 @@ public interface RiderProfileRepository extends JpaRepository<RiderProfile, UUID
     List<RiderProfile> findOnlineWithKnownLocation();
 
     boolean existsByUserId(UUID userId);
+
+    long countByOnlineTrue();
 }

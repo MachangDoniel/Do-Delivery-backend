@@ -15,6 +15,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -78,6 +80,36 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining("; "));
 
         return buildError(HttpStatus.BAD_REQUEST, "Validation Failed", message, req);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnreadableMessage(
+            HttpMessageNotReadableException ex, HttpServletRequest req) {
+        String message = "Malformed request body";
+        Throwable cause = ex.getMostSpecificCause();
+
+        if (cause != null && cause.getMessage() != null) {
+            String lower = cause.getMessage().toLowerCase();
+            if (lower.contains("cannot deserialize value") && lower.contains("from string")) {
+                message = "Invalid value provided for one or more fields (e.g., enum values)";
+            }
+        }
+
+        return buildError(HttpStatus.BAD_REQUEST, "Validation Failed", message, req);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex, HttpServletRequest req) {
+        String supported = ex.getSupportedHttpMethods() == null
+                ? ""
+                : ex.getSupportedHttpMethods().stream().map(Enum::name).sorted().collect(Collectors.joining(", "));
+
+        String message = supported.isEmpty()
+                ? "HTTP method not allowed for this endpoint"
+                : "HTTP method not allowed for this endpoint. Use: " + supported;
+
+        return buildError(HttpStatus.METHOD_NOT_ALLOWED, "Method Not Allowed", message, req);
     }
 
     // ── Infrastructure exceptions ───────────────────────────────────────────
