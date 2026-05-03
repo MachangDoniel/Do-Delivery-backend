@@ -11,8 +11,10 @@ import com.dodelivery.app.repository.OrderRepository;
 import com.dodelivery.app.repository.UserRepository;
 import com.dodelivery.app.service.OrderService;
 import com.dodelivery.app.service.PricingService;
+import com.dodelivery.app.service.RiderService;
 import com.dodelivery.app.websocket.WebSocketEventPublisher;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,7 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository         userRepository;
     private final PricingService         pricingService;
     private final WebSocketEventPublisher eventPublisher;
+    private final ObjectProvider<RiderService> riderServiceProvider;
 
     @Override
     @Transactional
@@ -51,10 +54,16 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         Order saved = orderRepository.save(order);
-        OrderResponse response = toResponse(saved);
+        
+        // Try to auto-assign the nearest rider
+        RiderService riderService = riderServiceProvider.getIfAvailable();
+        OrderResponse autoAssignedResponse = riderService != null ? riderService.tryAutoAssignRider(saved.getId()) : null;
+        OrderResponse response = autoAssignedResponse != null ? autoAssignedResponse : toResponse(saved);
 
-        // Notify online riders of the new delivery request
-        eventPublisher.publishNewOrderRequest(response);
+        // Notify online riders of the new delivery request (if not already assigned)
+        if (autoAssignedResponse == null) {
+            eventPublisher.publishNewOrderRequest(response);
+        }
 
         return response;
     }
@@ -120,6 +129,9 @@ public class OrderServiceImpl implements OrderService {
                 order.getStatus(),
                 order.getPrice(),
                 order.getNote(),
+                order.getAssignedAt(),
+                order.getPickedUpAt(),
+                order.getDeliveredAt(),
                 order.getCreatedAt(),
                 order.getUpdatedAt()
         );

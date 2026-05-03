@@ -28,6 +28,10 @@ public record OrderResponse(
         BigDecimal price,
         String note,
 
+        Instant assignedAt,
+        Instant pickedUpAt,
+        Instant deliveredAt,
+
         Instant createdAt,
         Instant updatedAt
 ) {}

@@ -161,6 +161,16 @@ public class AuthServiceImpl implements AuthService {
         return new AuthResponse(newAccess, newRefresh, 900L);
     }
 
+    @Override
+    public void revokeRefreshToken(String refreshToken) {
+        if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
+            return; // Already invalid — nothing to revoke
+        }
+        String phone = jwtTokenProvider.getPhoneFromToken(refreshToken);
+        redisTemplate.delete(REFRESH_TOKEN_KEY_PREFIX + phone);
+        log.info("Refresh token revoked for user [phone={}]", maskPhone(phone));
+    }
+
     // ── Private helpers ──────────────────────────────────────────────────────
 
     private String generateAndStoreOtp(String phone) {

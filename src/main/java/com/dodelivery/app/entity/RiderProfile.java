@@ -40,6 +40,12 @@ public class RiderProfile {
     @Builder.Default
     private boolean online = false;
 
+    @Column(name = "current_lat")
+    private Double currentLat;
+
+    @Column(name = "current_lng")
+    private Double currentLng;
+
     @Column(nullable = false, precision = 3, scale = 2)
     @Builder.Default
     private BigDecimal rating = BigDecimal.ZERO;

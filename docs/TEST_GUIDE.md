@@ -1,10 +1,12 @@
-# 🚚 Do Delivery Backend — Test Guide (MVP Flow)
+# 🚚 Do Delivery Backend — Test Guide
 
-This document helps **developers, testers, and new contributors** quickly verify the backend system step-by-step using `curl` or Postman.
+Step-by-step verification guide for developers and testers using `curl`.  
+For the full API reference see [API_REFERENCE.md](./API_REFERENCE.md).  
+For an automated end-to-end script see [test_dispatch_flow.sh](./test_dispatch_flow.sh).
 
 ---
 
-# 📌 Base URL
+## Base URL
 
 ```
 http://localhost:8080
@@ -12,185 +14,334 @@ http://localhost:8080
 
 ---
 
-# 🔐 1. AUTH FLOW
-
-## 1.1 Register User
+## Quick Start (copy-paste script)
 
 ```bash
-curl -X POST http://localhost:8080/api/auth/register \
--H "Content-Type: application/json" \
--d '{
-  "name": "Doniel",
-  "phone": "+8801700000000",
-  "role": "CUSTOMER"
-}'
+bash docs/test_dispatch_flow.sh
 ```
 
-### Expected Response
-
-* `201 CREATED`
-* User created successfully
+Runs the full dispatch lifecycle automatically and prints a summary.
 
 ---
 
-## 1.2 Send OTP
+# 1. AUTH FLOW
+
+## 1.1 Register a CUSTOMER
 
 ```bash
-curl -X POST http://localhost:8080/api/auth/send-otp \
+curl -s -X POST http://localhost:8080/api/auth/register \
 -H "Content-Type: application/json" \
 -d '{
-  "phone": "+8801700000000"
+  "name":  "Doniel",
+  "phone": "+8801700000001",
+  "role":  "CUSTOMER"
 }'
 ```
 
-### Expected Response
-
-* OTP sent
+Expected: `201` — `otp` value returned in `data.otp` (mock dev mode)
 
 ---
 
-## 1.3 Login (Get JWT)
+## 1.2 Register a RIDER
 
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -s -X POST http://localhost:8080/api/auth/register \
 -H "Content-Type: application/json" \
 -d '{
-  "phone": "+8801700000000",
-  "otp": "1234"
+  "name":  "Karim Rider",
+  "phone": "+8801700000002",
+  "role":  "RIDER"
 }'
 ```
 
-### Expected Response
-
-* `accessToken`
-* `refreshToken`
+Expected: `201` — separate `otp` for rider
 
 ---
 
-# 🚚 2. ORDER FLOW
-
-## 2.1 Create Order
+## 1.3 Login (get JWT)
 
 ```bash
-curl -X POST http://localhost:8080/api/orders \
+curl -s -X POST http://localhost:8080/api/auth/login \
 -H "Content-Type: application/json" \
--H "Authorization: Bearer <ACCESS_TOKEN>" \
+-d '{
+  "phone": "+8801700000001",
+  "otp":   "<OTP_FROM_REGISTER>"
+}'
+```
+
+Expected `200` response:
+
+```json
+{
+  "status": 200,
+  "data": {
+    "accessToken":  "eyJhbGci...",
+    "refreshToken": "eyJhbGci...",
+    "expiresIn":    900
+  }
+}
+```
+
+> Save `accessToken` as `CUSTOMER_TOKEN` and `RIDER_TOKEN` for the respective accounts.
+
+---
+
+## 1.4 Refresh access token
+
+```bash
+curl -s -X POST http://localhost:8080/api/auth/refresh \
+-H "Content-Type: application/json" \
+-d '{ "refreshToken": "<REFRESH_TOKEN>" }'
+```
+
+Expected: `200` — new `accessToken` and `refreshToken`.  
+Old refresh token is invalidated immediately.
+
+---
+
+# 2. ORDER FLOW
+
+## 2.1 Create Order (CUSTOMER) — with AUTO-DISPATCH
+
+```bash
+curl -s -X POST http://localhost:8080/api/orders \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer <CUSTOMER_TOKEN>" \
 -d '{
   "pickupLat": 23.9999,
   "pickupLng": 90.4203,
-  "dropLat": 23.8103,
-  "dropLng": 90.4125,
-  "type": "PARCEL",
-  "note": "Pickup from Kaliganj, drop at Dhaka"
+  "dropLat":   23.8103,
+  "dropLng":   90.4125,
+  "type":      "PARCEL",
+  "note":      "Pickup from Kaliganj, drop at Dhaka"
 }'
 ```
 
-### Expected Response
+Expected: `201` — **Auto-dispatch enabled**:
+- If online riders with GPS location exist → `status: ASSIGNED` (nearest rider selected instantly)
+- If no riders available → `status: CREATED` (stays pending, can assign manually later via `/assign`)
 
-* `201 CREATED`
-* Order created with:
+Price calculated automatically in both cases.
 
-  * status = `CREATED`
-  * customerId filled
+```json
+{
+  "status": 201,
+  "data": {
+    "id":           "6cccc9f5-2ffb-4b0c-a2d2-19a7e73b8fde",
+    "customerId":   "a944ebea-...",
+    "customerName": "Doniel",
+    "riderId":      null,
+    "riderName":    null,
+    "pickupLat":    23.9999,
+    "pickupLng":    90.4203,
+    "dropLat":      23.8103,
+    "dropLng":      90.4125,
+    "type":         "PARCEL",
+    "status":       "CREATED",
+    "price":        18.32,
+    "note":         "Pickup from Kaliganj, drop at Dhaka",
+    "assignedAt":   null,
+    "pickedUpAt":   null,
+    "deliveredAt":  null,
+    "createdAt":    "2026-05-02T12:00:00Z",
+    "updatedAt":    "2026-05-02T12:00:00Z"
+  }
+}
+```
+
+> Save `data.id` as `ORDER_ID`.
 
 ---
 
-## 2.2 Get My Orders
+## 2.2 Get My Orders (CUSTOMER)
 
 ```bash
-curl -X GET http://localhost:8080/api/orders \
--H "Authorization: Bearer <ACCESS_TOKEN>"
+curl -s http://localhost:8080/api/orders \
+-H "Authorization: Bearer <CUSTOMER_TOKEN>"
 ```
-
-### Expected Response
-
-* List of user orders
 
 ---
 
 ## 2.3 Get Order by ID
 
 ```bash
-curl -X GET http://localhost:8080/api/orders/<ORDER_ID> \
--H "Authorization: Bearer <ACCESS_TOKEN>"
+curl -s http://localhost:8080/api/orders/<ORDER_ID> \
+-H "Authorization: Bearer <CUSTOMER_TOKEN>"
 ```
 
 ---
 
-# 🔐 3. SECURITY TESTS
-
-## 3.1 No Token (Should Fail)
+## 2.4 Cancel Order
 
 ```bash
-curl -X GET http://localhost:8080/api/orders
+curl -s -X POST http://localhost:8080/api/orders/<ORDER_ID>/cancel \
+-H "Authorization: Bearer <CUSTOMER_TOKEN>"
 ```
 
-### Expected
-
-* `401 Unauthorized`
+Only works when `status = CREATED`. Returns `status: CANCELLED`.
 
 ---
 
-## 3.2 Wrong Role Access
+# 3. RIDER DISPATCH FLOW
 
-Try accessing customer endpoint with RIDER token.
+> State machine: `CREATED → ASSIGNED → ACCEPTED → PICKED_UP → DELIVERED`
 
-### Expected
+## 3.1 Rider goes online
 
-* `403 Forbidden`
+```bash
+curl -s -X POST http://localhost:8080/api/riders/online \
+-H "Authorization: Bearer <RIDER_TOKEN>"
+```
+
+Expected: `200`
 
 ---
 
-# 🚨 4. SYSTEM RULES
+## 3.2 Rider sends GPS location
 
-## Order Status Flow
+The rider must send a location **before** being assignable.
 
+```bash
+curl -s -X POST http://localhost:8080/api/riders/location \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer <RIDER_TOKEN>" \
+-d '{
+  "lat": 23.9001,
+  "lng": 90.4010
+}'
 ```
-CREATED → ASSIGNED → ACCEPTED → PICKED_UP → DELIVERED
+
+Expected: `200`
+
+---
+
+## 3.3 Assign nearest rider (CUSTOMER) — Manual or Retry
+
+**Note:** Assignment now happens **automatically** at order creation if online riders exist.
+This endpoint is for **retry dispatch** after rejection or if order stays in `CREATED` state.
+
+```bash
+curl -s -X POST http://localhost:8080/api/orders/<ORDER_ID>/assign \
+-H "Authorization: Bearer <CUSTOMER_TOKEN>"
+```
+
+Only works if order status is `CREATED` (not already assigned).  
+Expected: `200` — `status: ASSIGNED`, `riderId` and `assignedAt` populated.
+
+Fails with `400` if:
+- Order is not in `CREATED` state
+- No online riders have a known location
+
+---
+
+## 3.4 Rider accepts
+
+```bash
+curl -s -X POST http://localhost:8080/api/orders/<ORDER_ID>/accept \
+-H "Authorization: Bearer <RIDER_TOKEN>"
+```
+
+Expected: `200` — `status: ACCEPTED`
+
+---
+
+## 3.4b Rider rejects (optional)
+
+```bash
+curl -s -X POST http://localhost:8080/api/orders/<ORDER_ID>/reject \
+-H "Authorization: Bearer <RIDER_TOKEN>"
+```
+
+Order reverts to `CREATED`, rider is unassigned. Customer must `/assign` again.
+
+---
+
+## 3.5 Rider marks pickup
+
+```bash
+curl -s -X POST http://localhost:8080/api/orders/<ORDER_ID>/pickup \
+-H "Authorization: Bearer <RIDER_TOKEN>"
+```
+
+Expected: `200` — `status: PICKED_UP`, `pickedUpAt` set.
+
+---
+
+## 3.6 Rider marks delivered
+
+```bash
+curl -s -X POST http://localhost:8080/api/orders/<ORDER_ID>/deliver \
+-H "Authorization: Bearer <RIDER_TOKEN>"
+```
+
+Expected: `200` — `status: DELIVERED`, `deliveredAt` set.
+
+---
+
+## 3.7 Rider goes offline
+
+```bash
+curl -s -X POST http://localhost:8080/api/riders/offline \
+-H "Authorization: Bearer <RIDER_TOKEN>"
 ```
 
 ---
 
-# 🧪 5. TROUBLESHOOTING
+# 4. SECURITY TESTS
 
-## If 401 Unauthorized
+## 4.1 No token → 401
 
-* Check JWT token format
-* Ensure header:
-
-```
-Authorization: Bearer <token>
+```bash
+curl -s http://localhost:8080/api/orders
 ```
 
-## If 500 Error
-
-* Check backend logs
-* Most likely service or DB issue
+Expected: `401 Unauthorized`
 
 ---
 
-# 🚀 6. NEXT MODULE (FUTURE)
+## 4.2 Wrong role → 403
 
-## Rider System (Coming Next)
+Use a RIDER token on a CUSTOMER-only endpoint:
 
-* Rider registration
-* Rider online/offline
-* Assign nearest rider
-* Accept / reject order
-* Real-time updates (WebSocket)
+```bash
+curl -s -X POST http://localhost:8080/api/orders \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer <RIDER_TOKEN>" \
+-d '{"pickupLat":23.9,"pickupLng":90.4,"dropLat":23.8,"dropLng":90.4,"type":"PARCEL"}'
+```
+
+Expected: `403 Forbidden`
 
 ---
 
-# 👨‍💻 Maintainer Notes
+## 4.3 Invalid state transition → 400
 
-This system is currently MVP-level and stable for:
+Try delivering before pickup:
 
-* Authentication
-* Order creation
-* Basic order retrieval
+```bash
+curl -s -X POST http://localhost:8080/api/orders/<ORDER_ID>/deliver \
+-H "Authorization: Bearer <RIDER_TOKEN>"
+```
 
-Further improvements should focus on:
+Expected: `400` — `"Cannot perform delivery. Order status is ACCEPTED. Expected: PICKED_UP"`
 
-* Rider dispatch system
-* Real-time tracking
-* Location-based assignment
+---
+
+## 4.4 Wrong rider tries to accept → 400
+
+Use a different rider token on an order assigned to another rider.
+
+Expected: `400` — `"This order is not assigned to you"`
+
+---
+
+# 5. TROUBLESHOOTING
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `401 Unauthorized` | Missing or expired token | Re-login or call `/api/auth/refresh` |
+| `403 Forbidden` | Wrong role | Use correct token (CUSTOMER vs RIDER) |
+| `404 on /api/riders/...` | Old server build running | Kill port 8080 process and restart: `lsof -ti:8080 \| xargs kill -9` then `mvn -DskipTests spring-boot:run` |
+| `400 No online riders` | Rider not online or no location sent | Call `/api/riders/online` then `/api/riders/location` first |
+| `400 Order cannot be assigned` | Order not in `CREATED` state | Check current status with `GET /api/orders/<id>` |
+| `500 Internal Server Error` | Unexpected fault | Check Spring Boot logs |

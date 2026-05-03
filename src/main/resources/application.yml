@@ -14,7 +14,6 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
         default_batch_fetch_size: 20
 
@@ -34,6 +33,19 @@ server:
 
 # ─── App-specific config ───────────────────────────────────────────────────────
 app:
+  cors:
+    # Frontend origins allowed to call REST APIs from a browser.
+    # Add your deployed domain(s) in production.
+    allowed-origins:
+      - http://localhost:3000
+      - http://127.0.0.1:3000
+
+  cookie:
+    secure: false                          # set true in production (HTTPS only)
+    same-site: Lax                         # Lax for dev; Strict for production
+    access-token-max-age-seconds: 900      # must match jwt.access-token-expiry-ms / 1000
+    refresh-token-max-age-seconds: 604800  # must match jwt.refresh-token-expiry-ms / 1000
+
   jwt:
     # Must be at least 32 characters. Externalize via env var in production.
     secret: do-delivery-super-secret-jwt-key-min-32-chars!

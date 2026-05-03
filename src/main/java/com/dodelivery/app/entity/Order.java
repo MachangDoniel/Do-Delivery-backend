@@ -29,7 +29,7 @@ public class Order {
     @JoinColumn(name = "customer_id", nullable = false)
     private User customer;
 
-    /** Assigned rider — null until a rider accepts the order. */
+    /** Assigned rider — null until dispatch finds a rider. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rider_id")
     private User rider;
@@ -62,6 +62,15 @@ public class Order {
     /** Optional delivery instructions from the customer. */
     @Column(columnDefinition = "TEXT")
     private String note;
+
+    @Column(name = "assigned_at")
+    private Instant assignedAt;
+
+    @Column(name = "picked_up_at")
+    private Instant pickedUpAt;
+
+    @Column(name = "delivered_at")
+    private Instant deliveredAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
