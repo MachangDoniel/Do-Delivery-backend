@@ -5,3 +5,5 @@ mvnw.cmd
 .idea
 .git
 *.log
+.env
+.env.*
