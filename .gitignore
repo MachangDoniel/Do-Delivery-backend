@@ -1,0 +1,12 @@
+# Build output
+/target/
+
+# Environment and secrets
+.env
+.env.*
+
+# IDE
+.idea/
+
+# Logs
+*.log

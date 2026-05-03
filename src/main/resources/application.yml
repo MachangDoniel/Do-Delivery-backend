@@ -3,9 +3,9 @@ spring:
     name: do-delivery-backend
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/do_delivery
-    username: donieltripura
-    password: ""
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/do_delivery}
+    username: ${SPRING_DATASOURCE_USERNAME:donieltripura}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -24,12 +24,12 @@ spring:
 
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
       timeout: 2000ms
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 # ─── App-specific config ───────────────────────────────────────────────────────
 app:
@@ -41,20 +41,20 @@ app:
       - http://127.0.0.1:3000
 
   cookie:
-    secure: false                          # set true in production (HTTPS only)
+    secure: ${APP_COOKIE_SECURE:false}     # set true in production (HTTPS only)
     same-site: Lax                         # Lax for dev; Strict for production
     access-token-max-age-seconds: 900      # must match jwt.access-token-expiry-ms / 1000
     refresh-token-max-age-seconds: 604800  # must match jwt.refresh-token-expiry-ms / 1000
 
   jwt:
     # Must be at least 32 characters. Externalize via env var in production.
-    secret: do-delivery-super-secret-jwt-key-min-32-chars!
+    secret: ${APP_JWT_SECRET:do-delivery-super-secret-jwt-key-min-32-chars!}
     access-token-expiry-ms: 900000       # 15 minutes
     refresh-token-expiry-ms: 604800000   # 7 days
 
   otp:
     ttl-seconds: 300          # OTP valid for 5 minutes
-    mock-enabled: true        # Return OTP in response (dev/test only — disable in prod)
+    mock-enabled: ${APP_OTP_MOCK_ENABLED:true} # Return OTP in response (dev/test only — disable in prod)
 
   pricing:
     base-fare: 2.50           # USD
